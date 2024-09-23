@@ -1,0 +1,71 @@
+/***************************************************************************
+* EDITOR STYLE
+***************************************************************************/
+
+
+div[data-type="quick-download-button/download-button"] div[data-align="center"]{
+    text-align:  center;
+    }
+[data-plugin-name="qdbn"][data-style="small"] p.up, [data-plugin-name="qdbn"][data-style="small"] p.down { z-index: 0!important; margin:0;}
+.custom-download-logo__button {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background-color: hsla(0, 0%, 100%, 1);
+    border: 1px solid grey;
+}
+
+.component-base-control__field.qdbu-label-mtop p {
+    display: block;
+    margin-top: 15px;
+}
+
+.qdbu-editor-label {
+    display: block;
+    margin-bottom: 15px;
+}
+
+.up button.components-button.custom-download-logo__button.has-icon {
+    z-index: 8;
+    border: 2px solid black;
+    position: absolute;
+    top: -42px;
+    right: 0px;
+}
+
+.qdbn-download-button-inner.ext-link p.down {
+    display: none;
+}
+
+.hide-size .qdbn-download-button-inner p.down {
+    display: none;
+}
+
+.hide-size .qdbn-download-button-inner {
+    margin-bottom: 1rem;
+}
+
+.hide-file .qdbn-download-button-inner p.up {
+    display: none;
+}
+.hide-file .qdbn-download-button-inner {
+    margin-top: 1rem;
+}
+
+
+/* Timer input control */
+.components-input-control.components-number-control + .components-radio-control { display: none!important;}
+
+.components-input-control.components-number-control + .components-radio-control + div { margin-top: 1rem }
+
+/* hover on mid button */
+[data-style="mid"] button:hover span.download-btn-icon + span {
+    left: 0!important;
+}
+
+[data-style="mid"] .qdbn-download-button-inner button span.download-btn-icon { left: -200px!important}
+
+div.feedBackL1 span + span {
+    color: #000;
+    font-weight: 500;
+}

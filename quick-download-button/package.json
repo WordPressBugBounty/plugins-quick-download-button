@@ -1,0 +1,28 @@
+{
+  "name": "quick-download-button",
+  "version": "1.0.9",
+  "description": "Download button with options for countdown timer, 4 button styles, colors, hide/show file size and extension. Support for wordpress block and shortcodes.",
+  "main": "build/index.js",
+  "scripts": {
+    "start": "wp-scripts start",
+    "build": "wp-scripts build",
+    "build:custom": "wp-scripts build ./frontend/frontend.js --output-path=./frontend/minified",
+    "minifi:css": "css-minify -f ./css/style.css -o ./css/minified/",
+    "lint:css": "wp-scripts lint-style ./css/style.css",
+    "lint:js": "wp-scripts lint-js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kusimo/quick-download-button.git"
+  },
+  "author": "Abidemi Kusimo",
+  "license": "GPL-2.0-only",
+  "bugs": {
+    "url": "https://github.com/kusimo/quick-download-button/issues"
+  },
+  "homepage": "https://github.com/kusimo/quick-download-button#readme",
+  "devDependencies": {
+    "@wordpress/scripts": "^23.7.1",
+    "css-minify": "^2.0.0"
+  }
+}
