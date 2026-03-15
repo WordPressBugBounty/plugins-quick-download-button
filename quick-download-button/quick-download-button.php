@@ -4,7 +4,7 @@
  * Plugin Name: Quick Download Button
  * Plugin URI: https://github.com/kusimo/quick-download-button
  * Description: Use to add download button link to post or page.
- * Version: 1.2.6
+ * Version: 1.2.7
  * Author: Abidemi Kusimo
  *
  * @package quick-download-button
