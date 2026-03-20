@@ -69,3 +69,80 @@ div.feedBackL1 span + span {
     color: #000;
     font-weight: 500;
 }
+
+/* Button Row — editor InnerBlocks layout */
+.qdb-btn-row .block-editor-block-list__layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--qdb-row-gap, 0px);
+    justify-content: var(--qdb-row-justify, flex-start);
+    align-items: var(--qdb-row-align, flex-start);
+}
+
+.qdb-btn-row--stack .block-editor-block-list__layout {
+    flex-direction: column;
+}
+
+/* Force consistent margins inside a row in the editor — same logic as style.css */
+.qdb-btn-row .hide-size .qdbn-download-button-inner {
+    margin-bottom: 0;
+}
+
+.qdb-btn-row .hide-file .qdbn-download-button-inner {
+    margin-top: 0;
+}
+
+/*
+ * Strip ALL Gutenberg-injected block spacing so only our gap controls the space.
+ * Gutenberg uses margin, margin-block-start, and the --wp--style--block-gap
+ * variable on .block-editor-block-list__block children — override all of them.
+ */
+.qdb-btn-row .block-editor-block-list__layout > *,
+.qdb-btn-row .block-editor-block-list__layout > .block-editor-block-list__block {
+    margin: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    margin-block-start: 0 !important;
+    margin-block-end: 0 !important;
+    float: none !important;
+}
+
+/* Icon picker */
+.qdb-icon-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.qdb-icon-btn {
+    width: 40px;
+    height: 40px;
+    padding: 4px;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    transition: border-color 0.15s;
+}
+
+.qdb-icon-btn:hover {
+    border-color: #0073aa;
+}
+
+.qdb-icon-btn.is-selected {
+    border-color: #0073aa;
+    background: #e8f3fb;
+    color: #0073aa;
+}
+
+.qdb-icon-btn--text {
+    width: auto;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+}

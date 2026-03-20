@@ -4,7 +4,7 @@
  * Plugin Name: Quick Download Button
  * Plugin URI: https://github.com/kusimo/quick-download-button
  * Description: Use to add download button link to post or page.
- * Version: 1.2.7
+ * Version: 1.3.0
  * Author: Abidemi Kusimo
  *
  * @package quick-download-button
@@ -72,14 +72,22 @@ function qdbu_quick_download_button_register_blocks() {
 	);
 
 	//Localise script - download page ID
-	wp_localize_script(
-		'quick-download-button-editor-script',
-		'qdbu_data',
+	/**
+	 * Filter: qdb_editor_localize_data
+	 *
+	 * Modify the data passed to the Gutenberg block editor script.
+	 * Used by Pro: inject pro block attributes, available product list, etc.
+	 *
+	 * @param array $data Localized data for the editor script.
+	 */
+	$editor_localize_data = apply_filters(
+		'qdb_editor_localize_data',
 		array(
 			'download_page_id' => (int) get_option( 'qdbu_quick_download_button_page_id' ),
-			'qdbn_user_roles'  => qdbn_get_user_rolls(),  
+			'qdbn_user_roles'  => qdbn_get_user_rolls(),
 		)
 	);
+	wp_localize_script( 'quick-download-button-editor-script', 'qdbu_data', $editor_localize_data );
 
 	//Register blocks script and styles
 	register_block_type(
@@ -87,6 +95,15 @@ function qdbu_quick_download_button_register_blocks() {
 		array(
 			'editor_script' => 'quick-download-button-editor-script',                    // Calls registered script above
 			'editor_style'  => 'quick-download-button-editor-styles',                    // Calls registered stylesheet above
+			'style'         => 'quick-download-button-front-end-styles',
+		)
+	);
+
+	register_block_type(
+		'quick-download-button/button-row',
+		array(
+			'editor_script' => 'quick-download-button-editor-script',
+			'editor_style'  => 'quick-download-button-editor-styles',
 			'style'         => 'quick-download-button-front-end-styles',
 		)
 	);
@@ -171,16 +188,24 @@ function qdbu_button_front_end_script() {
 			true
 		);
 
-		wp_localize_script(
-			'quick-download-button-frontend-script',
-			'quick_download_object',
+		/**
+		 * Filter: qdb_localize_script_data
+		 *
+		 * Modify the data passed to the frontend download button script.
+		 * Used by Pro: inject email gate config, download limit info, etc.
+		 *
+		 * @param array $data Localized data for the frontend script.
+		 */
+		$frontend_localize_data = apply_filters(
+			'qdb_localize_script_data',
 			array(
-				'ajaxurl'     => admin_url( 'admin-ajax.php' ),
-				'security'    => wp_create_nonce( 'qdbutton_nonce_action' ),
-				'redirecturl' => qdbu_default_url(),
-				'qdbn_user_roles'  => qdbn_get_current_user_roles(),  
+				'ajaxurl'         => admin_url( 'admin-ajax.php' ),
+				'security'        => wp_create_nonce( 'qdbutton_nonce_action' ),
+				'redirecturl'     => qdbu_default_url(),
+				'qdbn_user_roles' => qdbn_get_current_user_roles(),
 			)
 		);
+		wp_localize_script( 'quick-download-button-frontend-script', 'quick_download_object', $frontend_localize_data );
 	}
 
 }

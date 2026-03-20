@@ -1,19 +1,21 @@
 import { registerBlockType } from '@wordpress/blocks'; 
 import { SVG, Path } from '@wordpress/primitives';
 import { __ } from '@wordpress/i18n';
-import { 
-    ColorPalette, 
-    InspectorControls, 
-    MediaUpload, 
+import {
+    ColorPalette,
+    InspectorControls,
+    MediaUpload,
     BlockControls,
     useBlockProps,
-    RichText
+    RichText,
+    InnerBlocks
 } from '@wordpress/block-editor';
-import { 
-    Button, 
-    PanelBody, 
-    TextControl, 
-    ToggleControl, 
+import {
+    Button,
+    PanelBody,
+    TextControl,
+    TextareaControl,
+    ToggleControl,
     RadioControl, __experimentalNumberControl as NumberControl,
 	ToolbarGroup,
     ToolbarButton,
@@ -21,7 +23,7 @@ import {
     SelectControl
 } from '@wordpress/components';
 
-import { useState } from '@wordpress/element';
+import { useState, RawHTML } from '@wordpress/element';
 
 import colors from './colors';
 
@@ -35,6 +37,83 @@ const blockIcon = <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="2
 
 let user_roles = qdbu_data['qdbn_user_roles'];
 
+const alignMap = { left: 'flex-start', center: 'center', right: 'flex-end' };
+
+/* ── Built-in icon sets ───────────────────────────────────────────── */
+const QDB_DOWNLOAD_ICONS = [
+    { id: 'default',  label: 'Arrow',   path: 'M18 11.3l-1-1.1-4 4V3h-1.5v11.3L7 10.2l-1 1.1 6.2 5.8 5.8-5.8zm.5 3.7v3.5h-13V15H4v5h16v-5h-1.5z' },
+    { id: 'cloud',    label: 'Cloud',   path: 'M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z' },
+    { id: 'circle',   label: 'Circle',  path: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 5h2v6h3l-4 4-4-4h3V7z' },
+    { id: 'file-dl',  label: 'File',    path: 'M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z' },
+    { id: 'inbox',    label: 'Inbox',   path: 'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5v-3h3.56c.69 1.19 1.97 2 3.45 2s2.75-.81 3.45-2H19v3zm0-5h-4.99c0 1.1-.9 1.99-2 1.99S10 15.1 10 14H5V5h14v9z' },
+    { id: 'save',     label: 'Save',    path: 'M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z' },
+    { id: 'bolt',     label: 'Bolt',    path: 'M7 2v11h3v9l7-12h-4l4-8z' },
+    { id: 'none',     label: 'None',    path: null },
+    { id: 'custom',   label: 'Custom',  path: null },
+];
+
+const QDB_SIZE_ICONS = [
+    { id: 'folder',   label: 'Folder',  path: 'M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z' },
+    { id: 'archive',  label: 'Archive', path: 'M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z' },
+    { id: 'info',     label: 'Info',    path: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z' },
+    { id: 'chip',     label: 'Size',    path: 'M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z' },
+    { id: 'none',     label: 'None',    path: null },
+    { id: 'custom',   label: 'Custom',  path: null },
+];
+
+/**
+ * Render a built-in or custom SVG icon.
+ * For built-in icons: renders inline SVG from the path map.
+ * For 'custom': renders user-pasted SVG via RawHTML.
+ */
+function qdbRenderIcon( iconSet, id, customSvg, size = 20 ) {
+    if ( id === 'custom' ) {
+        return customSvg ? <RawHTML>{ customSvg }</RawHTML> : null;
+    }
+    const icon = iconSet.find( i => i.id === id );
+    if ( ! icon || ! icon.path ) return null;
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={ size } height={ size } aria-hidden="true">
+            <path fill="currentColor" d={ icon.path } />
+        </svg>
+    );
+}
+
+/**
+ * Render the icon picker grid used in InspectorControls panels.
+ */
+function QdbIconPicker( { icons, selected, customSvg, onSelect, onCustomSvgChange, label } ) {
+    return (
+        <div>
+            <label className="components-base-control__label qdbu-editor-label">{ label }</label>
+            <div className="qdb-icon-picker">
+                { icons.map( icon => (
+                    <button
+                        key={ icon.id }
+                        type="button"
+                        className={ `qdb-icon-btn${ selected === icon.id ? ' is-selected' : '' }${ icon.id === 'custom' ? ' qdb-icon-btn--text' : '' }` }
+                        onClick={ () => onSelect( icon.id ) }
+                        title={ icon.label }
+                    >
+                        { icon.path
+                            ? <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d={ icon.path } /></svg>
+                            : <span>{ icon.label }</span>
+                        }
+                    </button>
+                ) ) }
+            </div>
+            { selected === 'custom' && (
+                <TextareaControl
+                    label={ __( 'Paste SVG code', 'quick-download-button' ) }
+                    value={ customSvg }
+                    onChange={ onCustomSvgChange }
+                    rows={ 3 }
+                    help={ __( 'Paste a valid <svg>…</svg> string.', 'quick-download-button' ) }
+                />
+            ) }
+        </div>
+    );
+}
 
 registerBlockType( 'quick-download-button/download-button', {
     title: __('Download Button','quick-download-button'),
@@ -56,7 +135,7 @@ registerBlockType( 'quick-download-button/download-button', {
         },
         isSelectedLarge: {
             type: 'boolean',
-            default: true
+            default: false
         },
         isSelectedSmall: {
             type: 'boolean',
@@ -235,7 +314,62 @@ registerBlockType( 'quick-download-button/download-button', {
         user_role: {
             type: 'string',
             default: "0"
-        }
+        },
+        isSelectedPill: {
+            type: 'boolean',
+            default: false
+        },
+        isSelectedCard: {
+            type: 'boolean',
+            default: true
+        },
+        isSelectedGhost: {
+            type: 'boolean',
+            default: false
+        },
+        panelColor: {
+            type: 'string'
+        },
+        iconId: {
+            type: 'string',
+            default: 'default'
+        },
+        customIconSvg: {
+            type: 'string',
+            default: ''
+        },
+        customFileTypeIcon: {
+            type: 'string',
+            default: ''
+        },
+        fileSizeIconId: {
+            type: 'string',
+            default: 'folder'
+        },
+        customFileSizeIconSvg: {
+            type: 'string',
+            default: ''
+        },
+        iconPosition: {
+            type: 'string',
+            default: 'left'
+        },
+        manualFileSize: {
+            type: 'string',
+            default: ''
+        },
+        popupEnabled: {
+            type: 'boolean',
+            default: false
+        },
+        popupContent: {
+            type: 'string',
+            default: ''
+        },
+        popupClosable: {
+            type: 'boolean',
+            default: true
+        },
 
     },
     supports: {
@@ -286,7 +420,21 @@ registerBlockType( 'quick-download-button/download-button', {
                 iconDownload,
                 role,
                 user_role,
-                align
+                align,
+                isSelectedPill,
+                isSelectedCard,
+                isSelectedGhost,
+                panelColor,
+                iconId,
+                customIconSvg,
+                customFileTypeIcon,
+                fileSizeIconId,
+                customFileSizeIconSvg,
+                iconPosition,
+                manualFileSize,
+                popupEnabled,
+                popupContent,
+                popupClosable,
             },
             setAttributes,
             className
@@ -349,6 +497,10 @@ registerBlockType( 'quick-download-button/download-button', {
 
           const onChangeFontColor = value => {
                 setAttributes( { fontColor: value });
+          }
+
+          const onChangePanelColor = value => {
+                setAttributes( { panelColor: value } );
           }
 
           const onChangeBorderRadius = value => {
@@ -454,62 +606,94 @@ registerBlockType( 'quick-download-button/download-button', {
           }
 
           const onChangeButtonStyleLarge = value => {
-
-            setAttributes(
-                { buttonStyle: value },
-                { buttonType: value }
-            );
+            setAttributes( { buttonStyle: value }, { buttonType: value } );
             if(isSelectedLarge === false) {
-                setAttributes( { isSelectedLarge: true } ) 
-                setAttributes( { isSelectedSmall: false } ) 
-                setAttributes( { isSelectedMid: false } ) 
-                setAttributes( { isSelectedBasic: false } ) 
-            }  
+                setAttributes( { isSelectedLarge: true } )
+                setAttributes( { isSelectedSmall: false } )
+                setAttributes( { isSelectedMid: false } )
+                setAttributes( { isSelectedBasic: false } )
+                setAttributes( { isSelectedPill: false } )
+                setAttributes( { isSelectedCard: false } )
+                setAttributes( { isSelectedGhost: false } )
+            }
           }
 
           const onChangeButtonStyleSmall = value => {
-            setAttributes(
-                { buttonStyle: value },
-                { buttonType: value }
-            );
-            
+            setAttributes( { buttonStyle: value }, { buttonType: value } );
             if(isSelectedSmall === false) {
-                setAttributes( { isSelectedSmall: true } ) 
-                setAttributes( { isSelectedLarge: false } ) 
-                setAttributes( { isSelectedMid: false } ) 
-                setAttributes( { isSelectedBasic: false } ) 
-            } 
-           
+                setAttributes( { isSelectedSmall: true } )
+                setAttributes( { isSelectedLarge: false } )
+                setAttributes( { isSelectedMid: false } )
+                setAttributes( { isSelectedBasic: false } )
+                setAttributes( { isSelectedPill: false } )
+                setAttributes( { isSelectedCard: false } )
+                setAttributes( { isSelectedGhost: false } )
+            }
           }
 
           const onChangeButtonStyleMid = value => {
-            setAttributes(
-                { buttonStyle: value },
-                { buttonType: value }
-            );
-            
+            setAttributes( { buttonStyle: value }, { buttonType: value } );
             if(isSelectedMid === false) {
-                setAttributes( { isSelectedSmall: false } ) 
-                setAttributes( { isSelectedLarge: false } ) 
-                setAttributes( { isSelectedBasic: false } ) 
-                setAttributes( { isSelectedMid: true } ) 
-            } 
-           
+                setAttributes( { isSelectedSmall: false } )
+                setAttributes( { isSelectedLarge: false } )
+                setAttributes( { isSelectedBasic: false } )
+                setAttributes( { isSelectedMid: true } )
+                setAttributes( { isSelectedPill: false } )
+                setAttributes( { isSelectedCard: false } )
+                setAttributes( { isSelectedGhost: false } )
+            }
           }
 
           const onChangeButtonStyleBasic = value => {
-            setAttributes(
-                { buttonStyle: value },
-                { buttonType: value }
-            );
-            
+            setAttributes( { buttonStyle: value }, { buttonType: value } );
             if(isSelectedBasic === false) {
-                setAttributes( { isSelectedSmall: false } ) 
-                setAttributes( { isSelectedLarge: false } ) 
-                setAttributes( { isSelectedMid: false } ) 
-                setAttributes( { isSelectedBasic: true } ) 
-            } 
-           
+                setAttributes( { isSelectedSmall: false } )
+                setAttributes( { isSelectedLarge: false } )
+                setAttributes( { isSelectedMid: false } )
+                setAttributes( { isSelectedBasic: true } )
+                setAttributes( { isSelectedPill: false } )
+                setAttributes( { isSelectedCard: false } )
+                setAttributes( { isSelectedGhost: false } )
+            }
+          }
+
+          const onChangeButtonStylePill = value => {
+            setAttributes( { buttonStyle: value }, { buttonType: value } );
+            if(isSelectedPill === false) {
+                setAttributes( { isSelectedPill: true } )
+                setAttributes( { isSelectedLarge: false } )
+                setAttributes( { isSelectedSmall: false } )
+                setAttributes( { isSelectedMid: false } )
+                setAttributes( { isSelectedBasic: false } )
+                setAttributes( { isSelectedCard: false } )
+                setAttributes( { isSelectedGhost: false } )
+            }
+          }
+
+          const onChangeButtonStyleCard = value => {
+            setAttributes( { buttonStyle: value }, { buttonType: value } );
+            if(isSelectedCard === false) {
+                setAttributes( { isSelectedCard: true } )
+                setAttributes( { isSelectedLarge: false } )
+                setAttributes( { isSelectedSmall: false } )
+                setAttributes( { isSelectedMid: false } )
+                setAttributes( { isSelectedBasic: false } )
+                setAttributes( { isSelectedPill: false } )
+                setAttributes( { isSelectedGhost: false } )
+            }
+          }
+
+          const onChangeButtonStyleGhost = value => {
+            setAttributes( { buttonStyle: value }, { buttonType: value } );
+            if(isSelectedGhost === false) {
+                setAttributes( { isSelectedGhost: true } )
+                setAttributes( { isSelectedLarge: false } )
+                setAttributes( { isSelectedSmall: false } )
+                setAttributes( { isSelectedMid: false } )
+                setAttributes( { isSelectedBasic: false } )
+                setAttributes( { isSelectedPill: false } )
+                setAttributes( { isSelectedCard: false } )
+            }
           }
 
 
@@ -573,30 +757,32 @@ registerBlockType( 'quick-download-button/download-button', {
             )}
         />
 
+        const displayFileSize = manualFileSize || downloadFileSize;
+
         const downButton = isSelectedLarge ?
-        <p className="down" style={{background: backgroundColor}}><i className="fi-folder-o"></i>
-            <span className="file-size">{downloadFileSize}</span>
+        <p className="down" style={{background: backgroundColor}}>{ qdbRenderIcon( QDB_SIZE_ICONS, fileSizeIconId, customFileSizeIconSvg ) }
+            <span className="file-size">{displayFileSize}</span>
         </p>
         :
         isSelectedMid ?
-        <p className="down" style={{background: backgroundColor,  borderRadius: `0px ${borderRadius}px ${borderRadius}px 0px`}}><i className="fi-folder-o"></i>
-        <span className="file-size">{downloadFileSize}</span>
-        </p> 
+        <p className="down" style={{background: backgroundColor,  borderRadius: `0px ${borderRadius}px ${borderRadius}px 0px`}}>{ qdbRenderIcon( QDB_SIZE_ICONS, fileSizeIconId, customFileSizeIconSvg ) }
+        <span className="file-size">{displayFileSize}</span>
+        </p>
         :
-        <p className="down"><i className="fi-folder-o"></i>
-            <span className="file-size">{downloadFileSize}</span>
+        <p className="down" style={ (isSelectedPill || isSelectedCard || isSelectedGhost) && panelColor ? {background: panelColor} : {} }>{ qdbRenderIcon( QDB_SIZE_ICONS, fileSizeIconId, customFileSizeIconSvg ) }
+            <span className="file-size">{displayFileSize}</span>
         </p>;
 
         const upButton = isSelectedLarge ?
-        <p className="up" style={{background: backgroundColor}}><i className={downloadFormat}></i> 
+        <p className="up" style={{background: backgroundColor}}>{ customFileTypeIcon ? <RawHTML>{ customFileTypeIcon }</RawHTML> : <i className={downloadFormat}></i> }
             { buttonContent }
         </p>
         : isSelectedMid ?
-        <p className="up" style={{background: backgroundColor,  borderRadius: `${borderRadius}px 0px 0px ${borderRadius}px`}}><i className={downloadFormat}></i> 
+        <p className="up" style={{background: backgroundColor,  borderRadius: `${borderRadius}px 0px 0px ${borderRadius}px`}}>{ customFileTypeIcon ? <RawHTML>{ customFileTypeIcon }</RawHTML> : <i className={downloadFormat}></i> }
              { buttonContent }
         </p>
         :
-        <p className="up"><i className={downloadFormat}></i> 
+        <p className="up" style={ (isSelectedPill || isSelectedCard || isSelectedGhost) && panelColor ? {background: panelColor} : {} }>{ customFileTypeIcon ? <RawHTML>{ customFileTypeIcon }</RawHTML> : <i className={downloadFormat}></i> }
              { buttonContent }
         </p>;
 
@@ -646,6 +832,27 @@ registerBlockType( 'quick-download-button/download-button', {
                                 { __("Select button style", "quick-download-button")}
                             </label>
                             <ToolbarGroup>
+                                <ToolbarButton
+                                    name='card'
+                                    label='Card'
+                                    text='Card'
+                                    onClick={ () => onChangeButtonStyleCard('card') }
+                                    isPressed= { isSelectedCard }
+                                />
+                                <ToolbarButton
+                                    name='pill'
+                                    label='Pill'
+                                    text='Pill'
+                                    onClick={ () => onChangeButtonStylePill('pill') }
+                                    isPressed= { isSelectedPill }
+                                />
+                                <ToolbarButton
+                                    name='ghost'
+                                    label='Ghost'
+                                    text='Ghost'
+                                    onClick={ () => onChangeButtonStyleGhost('ghost') }
+                                    isPressed= { isSelectedGhost }
+                                />
                                 <ToolbarButton
                                     name='large-qdb'
                                     label='Large'
@@ -706,6 +913,13 @@ registerBlockType( 'quick-download-button/download-button', {
                             onChange={ onChangeToggle }
                         />
                         { extUrl }
+                        <TextControl
+                            label={ __( 'Manual file size', 'quick-download-button' ) }
+                            help={ __( 'Override auto-detected size, or set size for external files (e.g. 2.5 MB).', 'quick-download-button' ) }
+                            value={ manualFileSize }
+                            onChange={ val => setAttributes({ manualFileSize: val }) }
+                            placeholder="e.g. 2.5 MB"
+                        />
                         </div>
                     </div>
                 </PanelBody>
@@ -743,6 +957,35 @@ registerBlockType( 'quick-download-button/download-button', {
                             onChange={ onRadioChange }
                         />
                         { durationnMsg }
+
+                        <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px solid #e2e8f0' }} />
+                        <ToggleControl
+                            label={ __( 'Show popup during countdown', 'quick-download-button' ) }
+                            help={ popupEnabled
+                                ? __( 'A modal popup will show while the countdown runs.', 'quick-download-button' )
+                                : __( 'No popup. Requires a countdown timer > 0.', 'quick-download-button' ) }
+                            checked={ popupEnabled }
+                            onChange={ val => setAttributes({ popupEnabled: val }) }
+                        />
+                        { popupEnabled && (
+                            <>
+                            <ToggleControl
+                                label={ __( 'Allow user to close popup', 'quick-download-button' ) }
+                                help={ popupClosable
+                                    ? __( 'User can dismiss the popup early. Download still starts when timer ends.', 'quick-download-button' )
+                                    : __( 'Popup cannot be closed. It disappears only when the download starts.', 'quick-download-button' ) }
+                                checked={ popupClosable }
+                                onChange={ val => setAttributes({ popupClosable: val }) }
+                            />
+                            <TextareaControl
+                                label={ __( 'Popup content', 'quick-download-button' ) }
+                                help={ __( 'Enter HTML, shortcodes, or ad embed code to display inside the popup.', 'quick-download-button' ) }
+                                value={ popupContent }
+                                onChange={ val => setAttributes({ popupContent: val }) }
+                                rows={ 5 }
+                            />
+                            </>
+                        ) }
                         </div>
                     </div>
                 </PanelBody>
@@ -781,6 +1024,25 @@ registerBlockType( 'quick-download-button/download-button', {
                     </div>
 
                 </PanelBody>
+                { ( isSelectedPill || isSelectedCard || isSelectedGhost ) && (
+                <PanelBody className="qdbnPanelBody"
+                    initialOpen={false}
+                    title= { __( 'Panel Background Color', "quick-download-button") }>
+                    <div className="components-base-control">
+                        <div className="component-base-control__field">
+                            <label className="components-base-control__label qdbu-editor-label">
+                                { __("File type / file size panel color", "quick-download-button")}
+                            </label>
+                            <ColorPalette
+                                value={ panelColor }
+                                onChange={ onChangePanelColor }
+                                disableCustomColors={ false }
+                                disableAlpha={ false }
+                             />
+                        </div>
+                    </div>
+                </PanelBody>
+                ) }
                 <PanelBody className="qdbnPanelBody"
                     initialOpen={false}
                     title= { __( 'Button Icon (Color / Show / Hide)', "quick-download-button") }>
@@ -808,11 +1070,11 @@ registerBlockType( 'quick-download-button/download-button', {
                             onChange={ onChangeHasFileIcon }
                         />
                         <ToggleControl
-                            label= { __( 'Show File Size', "quick-download-button") } 
+                            label= { __( 'Show File Size', "quick-download-button") }
                             help={
                                 hasFileSize
-                                    ?  __( 'File size is visible', "quick-download-button") 
-                                    : __( 'File size is hidden.', "quick-download-button") 
+                                    ?  __( 'File size is visible', "quick-download-button")
+                                    : __( 'File size is hidden.', "quick-download-button")
                             }
                             checked={ hasFileSize }
                             onChange={ onChangeHasFileSize }
@@ -909,6 +1171,81 @@ registerBlockType( 'quick-download-button/download-button', {
                     </div>
 
                 </PanelBody>
+                <PanelBody className="qdbnPanelBody"
+                    initialOpen={false}
+                    title={ __( 'Icons', 'quick-download-button' ) }>
+                    <div className="components-base-control">
+                        <div className="component-base-control__field">
+
+                            <QdbIconPicker
+                                icons={ QDB_DOWNLOAD_ICONS }
+                                selected={ iconId }
+                                customSvg={ customIconSvg }
+                                onSelect={ val => setAttributes({ iconId: val }) }
+                                onCustomSvgChange={ val => setAttributes({ customIconSvg: val }) }
+                                label={ __( 'Download button icon', 'quick-download-button' ) }
+                            />
+
+                            <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px solid #e2e8f0' }} />
+
+                            <label className="components-base-control__label qdbu-editor-label">
+                                { __( 'File type icon (auto-detected by default)', 'quick-download-button' ) }
+                            </label>
+                            <ToggleControl
+                                label={ __( 'Use custom file type icon', 'quick-download-button' ) }
+                                checked={ !! customFileTypeIcon }
+                                onChange={ val => setAttributes({ customFileTypeIcon: val ? ( customFileTypeIcon || '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></svg>' ) : '' }) }
+                            />
+                            { !! customFileTypeIcon && (
+                                <TextareaControl
+                                    label={ __( 'Paste SVG code for file type icon', 'quick-download-button' ) }
+                                    value={ customFileTypeIcon }
+                                    onChange={ val => setAttributes({ customFileTypeIcon: val }) }
+                                    rows={ 3 }
+                                />
+                            ) }
+
+                            <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px solid #e2e8f0' }} />
+
+                            <QdbIconPicker
+                                icons={ QDB_SIZE_ICONS }
+                                selected={ fileSizeIconId }
+                                customSvg={ customFileSizeIconSvg }
+                                onSelect={ val => setAttributes({ fileSizeIconId: val }) }
+                                onCustomSvgChange={ val => setAttributes({ customFileSizeIconSvg: val }) }
+                                label={ __( 'File size panel icon', 'quick-download-button' ) }
+                            />
+
+                            <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px solid #e2e8f0' }} />
+
+                            <label className="components-base-control__label qdbu-editor-label">
+                                { __( 'Download icon position', 'quick-download-button' ) }
+                            </label>
+                            <ToolbarGroup>
+                                <ToolbarButton
+                                    name="icon-left"
+                                    label={ __( 'Left', 'quick-download-button' ) }
+                                    text={ __( 'Left', 'quick-download-button' ) }
+                                    onClick={ () => setAttributes({ iconPosition: 'left' }) }
+                                    isPressed={ iconPosition === 'left' }
+                                />
+                                <ToolbarButton
+                                    name="icon-right"
+                                    label={ __( 'Right', 'quick-download-button' ) }
+                                    text={ __( 'Right', 'quick-download-button' ) }
+                                    onClick={ () => setAttributes({ iconPosition: 'right' }) }
+                                    isPressed={ iconPosition === 'right' }
+                                />
+                            </ToolbarGroup>
+                            { isSelectedMid && iconPosition === 'right' && (
+                                <p style={{ fontSize: '12px', color: '#888', marginTop: '8px' }}>
+                                    { __( 'Icon position has no effect on the Mid button style.', 'quick-download-button' ) }
+                                </p>
+                            ) }
+
+                        </div>
+                    </div>
+                </PanelBody>
                 <PanelBody className="qdbnPanelBody feedBack"
                     initialOpen={true}
                     title= { __( 'Feedback', "quick-download-button") }>
@@ -927,26 +1264,40 @@ registerBlockType( 'quick-download-button/download-button', {
             <div className="qdbn-wrapper">
                 <div className= {`${className} qdbn`} 
                     data-plugin-name="qdbn"
-                    data-style={`${props.attributes.isSelectedLarge ? 'large' 
+                    data-style={`${props.attributes.isSelectedLarge ? 'large'
                         : props.attributes.isSelectedSmall ? 'small'
-                        : props.attributes.isSelectedBasic ? 'basic'  
-                        : props.attributes.isSelectedMid ? 'mid' : 'large' }`}
+                        : props.attributes.isSelectedBasic ? 'basic'
+                        : props.attributes.isSelectedMid ? 'mid'
+                        : props.attributes.isSelectedPill ? 'pill'
+                        : props.attributes.isSelectedCard ? 'card'
+                        : props.attributes.isSelectedGhost ? 'ghost'
+                        : 'large' }`}
                     data-file={`${!props.attributes.hasFileIcon ? 'hide-file' : ''}`}
-                    data-size={`${!props.attributes.hasFileSize ? 'hide-size' : ''}`}>
-                    <div className={`${haveExternal ? 'qdbn-download-button-inner ext-link': 'qdbn-download-button-inner'}`}>
-                        <button 
+                    data-size={`${!props.attributes.hasFileSize ? 'hide-size' : ''}`}
+                    data-icon-position={ iconPosition }>
+                    <div className={`${haveExternal && !manualFileSize ? 'qdbn-download-button-inner ext-link': 'qdbn-download-button-inner'}`}
+                        style={ (isSelectedPill || isSelectedCard || isSelectedGhost) && (isSelectedSolid || isSelectedDotted || isSelectedNone) ? { border: `${buttonBorderWidth}px ${ isSelectedDotted ? 'dotted' : isSelectedNone ? 'none' : 'solid' } ${buttonBorderColor}` } : {} }>
+                        <button
                         type="button"
-                        data-button-type={`${props.attributes.isSelectedLarge ? 'large' 
-                            : props.attributes.isSelectedSmall ? 'small' 
+                        data-button-type={`${props.attributes.isSelectedLarge ? 'large'
+                            : props.attributes.isSelectedSmall ? 'small'
                             : props.attributes.isSelectedBasic ? 'basic'
-                            : props.attributes.isSelectedMid ? 'mid' : 'large' }`}
-                        className="g-btn f-l" 
-                        style={{ backgroundColor:  isSelectedSmall ?  backgroundColor 
-                            : isSelectedBasic ?  backgroundColor 
-                            : isSelectedMid ? backgroundColor : '#FFFFFF', 
-                            color : fontColor, 
+                            : props.attributes.isSelectedMid ? 'mid'
+                            : props.attributes.isSelectedPill ? 'pill'
+                            : props.attributes.isSelectedCard ? 'card'
+                            : props.attributes.isSelectedGhost ? 'ghost'
+                            : 'large' }`}
+                        className="g-btn f-l"
+                        style={{ backgroundColor: isSelectedSmall ? backgroundColor
+                            : isSelectedBasic ? backgroundColor
+                            : isSelectedMid ? backgroundColor
+                            : isSelectedPill ? backgroundColor
+                            : isSelectedCard ? backgroundColor
+                            : isSelectedGhost ? backgroundColor
+                            : '#FFFFFF',
+                            color : fontColor,
                             borderRadius: `${borderRadius}px`,
-                            border: `${buttonBorderWidth}px ${isSelectedDotted ? 'dotted': isSelectedNone ? 'none': isSelectedSolid ? 'solid': 'solid'} ${buttonBorderColor}`, }}
+                            border: (isSelectedPill || isSelectedCard || isSelectedGhost) ? undefined : `${buttonBorderWidth}px ${isSelectedDotted ? 'dotted': isSelectedNone ? 'none': isSelectedSolid ? 'solid': 'solid'} ${buttonBorderColor}`, }}
                         title={downloadTitlePlaceholder} 
                         data-attachment-id={downloadAttachmentId} 
                         data-page-id={downloadPageId}
@@ -961,8 +1312,8 @@ registerBlockType( 'quick-download-button/download-button', {
                         data-id={pID}
                         data-has-icon-dark={hasDownloadIconDark}
                         onSubmit={handleSubmit}>
-                            <span className='download-btn-icon'>{iconDownload}</span>
-                        <RichText 
+                            <span className='download-btn-icon'>{ qdbRenderIcon( QDB_DOWNLOAD_ICONS, iconId, customIconSvg ) }</span>
+                        <RichText
                             tagName="span"
                             placeholder={__("Download", "quick-download-button")}
                             onChange= { onChangeTitle}
@@ -991,23 +1342,33 @@ registerBlockType( 'quick-download-button/download-button', {
             <div className="qdbn-wrapper">
                 <div className={`qdbn`}
                     data-plugin-name="qdbn"
-                    data-style={`${attributes.isSelectedLarge ? 'large' : attributes.isSelectedSmall ? 'small' : attributes.isSelectedBasic ? 'basic' : attributes.isSelectedMid ? 'mid' : 'large' }`}
+                    data-style={`${attributes.isSelectedLarge ? 'large' : attributes.isSelectedSmall ? 'small' : attributes.isSelectedBasic ? 'basic' : attributes.isSelectedMid ? 'mid' : attributes.isSelectedPill ? 'pill' : attributes.isSelectedCard ? 'card' : attributes.isSelectedGhost ? 'ghost' : 'large' }`}
                     data-file={`${!attributes.hasFileIcon ? 'hide-file' : ''}`}
-                    data-size={`${!attributes.hasFileSize ? 'hide-size' : ''}`}>
-                    <div className={`${attributes.haveExternal ? 'qdbn-download-button-inner ext-link': 'qdbn-download-button-inner'}`}>
-                        <button 
-                        type="button" 
-                        data-button-type={`${attributes.isSelectedLarge ? 'large' 
-                            : attributes.isSelectedSmall ? 'small' 
+                    data-size={`${!attributes.hasFileSize ? 'hide-size' : ''}`}
+                    data-icon-position={ attributes.iconPosition }>
+                    <div className={`${attributes.haveExternal && !attributes.manualFileSize ? 'qdbn-download-button-inner ext-link': 'qdbn-download-button-inner'}`}
+                        style={ (attributes.isSelectedPill || attributes.isSelectedCard || attributes.isSelectedGhost) && (attributes.isSelectedSolid || attributes.isSelectedDotted || attributes.isSelectedNone) ? { border: `${attributes.buttonBorderWidth}px ${ attributes.isSelectedDotted ? 'dotted' : attributes.isSelectedNone ? 'none' : 'solid' } ${attributes.buttonBorderColor}` } : {} }>
+                        <button
+                        type="button"
+                        data-button-type={`${attributes.isSelectedLarge ? 'large'
+                            : attributes.isSelectedSmall ? 'small'
                             : attributes.isSelectedBasic ? 'basic'
-                            : attributes.isSelectedMid ? 'mid' : 'large' }`}
-                        className="g-btn f-l" 
-                        style={{ backgroundColor:  attributes.isSelectedSmall ?  attributes.backgroundColor 
-                            : attributes.isSelectedBasic ?  attributes.backgroundColor
-                            : attributes.isSelectedMid ? attributes.backgroundColor : '#FFFFFF', 
-                            color : attributes.fontColor, 
-                            borderRadius: `${attributes.borderRadius}px`, 
-                            border: `${attributes.buttonBorderWidth}px ${attributes.isSelectedDotted ? 'dotted': attributes.isSelectedNone ? 'none': attributes.isSelectedSolid ? 'solid': 'solid'} ${attributes.buttonBorderColor}`, }}
+                            : attributes.isSelectedMid ? 'mid'
+                            : attributes.isSelectedPill ? 'pill'
+                            : attributes.isSelectedCard ? 'card'
+                            : attributes.isSelectedGhost ? 'ghost'
+                            : 'large' }`}
+                        className="g-btn f-l"
+                        style={{ backgroundColor: attributes.isSelectedSmall ? attributes.backgroundColor
+                            : attributes.isSelectedBasic ? attributes.backgroundColor
+                            : attributes.isSelectedMid ? attributes.backgroundColor
+                            : attributes.isSelectedPill ? attributes.backgroundColor
+                            : attributes.isSelectedCard ? attributes.backgroundColor
+                            : attributes.isSelectedGhost ? attributes.backgroundColor
+                            : '#FFFFFF',
+                            color : attributes.fontColor,
+                            borderRadius: `${attributes.borderRadius}px`,
+                            border: (attributes.isSelectedPill || attributes.isSelectedCard || attributes.isSelectedGhost) ? undefined : `${attributes.buttonBorderWidth}px ${attributes.isSelectedDotted ? 'dotted': attributes.isSelectedNone ? 'none': attributes.isSelectedSolid ? 'solid': 'solid'} ${attributes.buttonBorderColor}`, }}
                         data-attachment-id={attributes.downloadAttachmentId} 
                         data-page-id={attributes.downloadPageId}
                         data-post-id=""
@@ -1020,28 +1381,154 @@ registerBlockType( 'quick-download-button/download-button', {
                         data-spinner={attributes.spinnerValue}
                         data-id={attributes.pID}
                         data-has-icon-dark={attributes.hasDownloadIconDark}
+                        { ...(attributes.popupEnabled ? { 'data-qdb-popup': '1' } : {}) }
+                        { ...(attributes.popupEnabled && !attributes.popupClosable ? { 'data-qdb-popup-closable': '0' } : {}) }
                         title={attributes.downloadTitlePlaceholder}>
-                            <span className='download-btn-icon'>{attributes.iconDownload}</span>
+                            <span className='download-btn-icon'>{ qdbRenderIcon( QDB_DOWNLOAD_ICONS, attributes.iconId, attributes.customIconSvg ) }</span>
                             <RichText.Content tagName="span" value={attributes.downloadTitle} />
                         </button>
-                        <p className="up" style={{ 
-                            background:  attributes.isSelectedLarge ?  attributes.backgroundColor : attributes.isSelectedMid ? attributes.backgroundColor  : 'transparent',
+                        <p className="up" style={{
+                            background: attributes.isSelectedLarge ? attributes.backgroundColor
+                                : attributes.isSelectedMid ? attributes.backgroundColor
+                                : (attributes.isSelectedPill || attributes.isSelectedCard || attributes.isSelectedGhost) ? (attributes.panelColor || undefined)
+                                : undefined,
                             borderRadius: attributes.isSelectedMid ? `${attributes.borderRadius}px 0px 0px ${attributes.borderRadius}px` : '0'
-                            }}>                  
-                            <i className={attributes.downloadFormat}></i> 
+                            }}>
+                            { attributes.customFileTypeIcon ? <RawHTML>{ attributes.customFileTypeIcon }</RawHTML> : <i className={attributes.downloadFormat}></i> }
                         </p>
-                        <p className="down" style={{ 
-                            background:  attributes.isSelectedLarge ?  attributes.backgroundColor : attributes.isSelectedMid ? attributes.backgroundColor  : 'transparent',
+                        <p className="down" style={{
+                            background: attributes.isSelectedLarge ? attributes.backgroundColor
+                                : attributes.isSelectedMid ? attributes.backgroundColor
+                                : (attributes.isSelectedPill || attributes.isSelectedCard || attributes.isSelectedGhost) ? (attributes.panelColor || undefined)
+                                : undefined,
                             borderRadius: attributes.isSelectedMid ? `0px ${attributes.borderRadius}px ${attributes.borderRadius}px 0px` : '0'
                             }}> 
-                            <i className="fi-folder-o"></i>
-                            <span className="file-size">{props.attributes.downloadFileSize}</span>
+                            { qdbRenderIcon( QDB_SIZE_ICONS, attributes.fileSizeIconId, attributes.customFileSizeIconSvg ) }
+                            <span className="file-size">{ attributes.manualFileSize || props.attributes.downloadFileSize }</span>
                         </p>  
                     </div>
                 </div>
                 <quick-download-button-info className="qdb-btn-info"></quick-download-button-info>
+                { attributes.popupEnabled && attributes.popupContent && (
+                    <div className="qdb-popup-src" hidden><RawHTML>{ attributes.popupContent }</RawHTML></div>
+                ) }
             </div>
         )
-        
+
     },
+} );
+
+registerBlockType( 'quick-download-button/button-row', {
+    title: __( 'Download Button Row', 'quick-download-button' ),
+    icon: blockIcon,
+    description: __( 'Place 2–3 download buttons side by side on one line.', 'quick-download-button' ),
+    category: 'widgets',
+    keywords: [
+        __( 'download', 'quick-download-button' ),
+        __( 'button', 'quick-download-button' ),
+        __( 'row', 'quick-download-button' ),
+    ],
+    attributes: {
+        layout: {
+            type: 'string',
+            default: 'horizontal'
+        },
+        stackOnMobile: {
+            type: 'boolean',
+            default: true
+        },
+        alignment: {
+            type: 'string',
+            default: 'left'
+        },
+        gap: {
+            type: 'number',
+            default: 12
+        }
+    },
+
+    edit: ( { attributes, setAttributes } ) => {
+        const { layout, stackOnMobile, alignment, gap } = attributes;
+
+        const rowJustify  = layout !== 'stack' ? ( alignMap[ alignment ] || 'flex-start' ) : undefined;
+        const rowAlign    = layout === 'stack'  ? ( alignMap[ alignment ] || 'flex-start' ) : 'flex-start';
+
+        return [
+            <InspectorControls>
+                <PanelBody
+                    title={ __( 'Button Row Settings', 'quick-download-button' ) }
+                    initialOpen={ true }
+                >
+                    <SelectControl
+                        label={ __( 'Layout', 'quick-download-button' ) }
+                        value={ layout }
+                        options={ [
+                            { label: __( 'Horizontal', 'quick-download-button' ), value: 'horizontal' },
+                            { label: __( 'Stack', 'quick-download-button' ), value: 'stack' },
+                        ] }
+                        onChange={ ( layout ) => setAttributes( { layout } ) }
+                    />
+                    <ToggleControl
+                        label={ __( 'Stack on mobile', 'quick-download-button' ) }
+                        help={
+                            stackOnMobile
+                                ? __( 'Buttons stack vertically on small screens.', 'quick-download-button' )
+                                : __( 'Buttons stay inline on all screen sizes.', 'quick-download-button' )
+                        }
+                        checked={ stackOnMobile }
+                        onChange={ ( stackOnMobile ) => setAttributes( { stackOnMobile } ) }
+                    />
+                    <SelectControl
+                        label={ __( 'Alignment', 'quick-download-button' ) }
+                        value={ alignment }
+                        options={ [
+                            { label: __( 'Left', 'quick-download-button' ), value: 'left' },
+                            { label: __( 'Center', 'quick-download-button' ), value: 'center' },
+                            { label: __( 'Right', 'quick-download-button' ), value: 'right' },
+                        ] }
+                        onChange={ ( alignment ) => setAttributes( { alignment } ) }
+                    />
+                    <RangeControl
+                        label={ __( 'Gap (px)', 'quick-download-button' ) }
+                        value={ gap }
+                        onChange={ ( gap ) => setAttributes( { gap } ) }
+                        min={ 0 }
+                        max={ 60 }
+                    />
+                </PanelBody>
+            </InspectorControls>,
+            <div
+                className={ `qdb-btn-row qdb-btn-row--${ layout }${ stackOnMobile ? ' qdb-btn-row--mobile-stack' : '' } qdb-btn-row--align-${ alignment }` }
+                style={ {
+                    '--qdb-row-gap':     `${ gap }px`,
+                    '--qdb-row-justify': rowJustify || 'flex-start',
+                    '--qdb-row-align':   rowAlign,
+                    gap:                 `${ gap }px`,
+                    justifyContent:      rowJustify,
+                    alignItems:          rowAlign,
+                } }
+            >
+                <InnerBlocks
+                    allowedBlocks={ [ 'quick-download-button/download-button' ] }
+                    orientation="horizontal"
+                    renderAppender={ InnerBlocks.ButtonBlockAppender }
+                />
+            </div>
+        ];
+    },
+
+    save: ( { attributes } ) => {
+        const { layout, stackOnMobile, alignment, gap } = attributes;
+        const saveJustify = layout !== 'stack' ? ( alignMap[ alignment ] || 'flex-start' ) : undefined;
+        const saveAlign   = layout === 'stack'  ? ( alignMap[ alignment ] || 'flex-start' ) : 'flex-start';
+
+        return (
+            <div
+                className={ `qdb-btn-row qdb-btn-row--${ layout }${ stackOnMobile ? ' qdb-btn-row--mobile-stack' : '' } qdb-btn-row--align-${ alignment }` }
+                style={ { gap: `${ gap }px`, justifyContent: saveJustify, alignItems: saveAlign } }
+            >
+                <InnerBlocks.Content />
+            </div>
+        );
+    }
 } );
