@@ -1,0 +1,71 @@
+/* Quick Download Button — Frontend styles */
+/* Gate forms, email input, passcode input, limit messages */
+
+.qdbp-gate {
+    margin-top: 12px;
+}
+
+
+.qdbp-gate-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+.qdbp-email-field-row,
+.qdbp-passcode-field-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.qdbp-email-input,
+.qdbp-passcode-input {
+    flex: 1;
+    min-width: 180px;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95em;
+}
+
+.qdbp-gate-submit {
+    padding: 8px 16px;
+    background: #0073aa;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.95em;
+    white-space: nowrap;
+}
+
+.qdbp-gate-submit:hover {
+    background: #005a87;
+}
+
+.qdbp-gate-error {
+    margin-top: 6px;
+    color: #cc0000;
+    font-size: 0.85em;
+}
+
+
+
+/* ── Download counter badge ──────────────────────────────────────────── */
+.qdbp-dl-count {
+    margin: 4px 0 0;
+    font-size: 0.8em;
+    color: #666;
+    text-align: center;
+}
+
+.qdbp-email-returning-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+}

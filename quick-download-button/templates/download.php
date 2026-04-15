@@ -22,6 +22,7 @@ if ( ! wp_verify_nonce( $nonce, 'qdbutton_nonce_action' ) ) {
 			$context = array(
 				'attachment_id' => (int) $attachment_id,
 				'external_url'  => '',
+				'btn_id'        => isset( $_GET['qdb_btn_id'] ) ? sanitize_text_field( wp_unslash( $_GET['qdb_btn_id'] ) ) : '',
 				'user_id'       => get_current_user_id(),
 				'ip'            => isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '',
 				'user_agent'    => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
@@ -71,6 +72,7 @@ if ( ! wp_verify_nonce( $nonce, 'qdbutton_nonce_action' ) ) {
 		$context = array(
 			'attachment_id' => 0,
 			'external_url'  => $url,
+			'btn_id'        => isset( $_GET['qdb_btn_id'] ) ? sanitize_text_field( wp_unslash( $_GET['qdb_btn_id'] ) ) : '',
 			'user_id'       => get_current_user_id(),
 			'ip'            => isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '',
 			'user_agent'    => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',

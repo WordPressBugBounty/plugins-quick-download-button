@@ -3,9 +3,14 @@
 /**
  * Plugin Name: Quick Download Button
  * Plugin URI: https://github.com/kusimo/quick-download-button
- * Description: Use to add download button link to post or page.
- * Version: 1.3.0
+ * Description: Create download buttons with countdown timers and file links. Upgrade to unlock email capture, analytics, and secure downloads.
+ * Version: 1.4.0
  * Author: Abidemi Kusimo
+ * Contributors: sidocode
+ * Requires at least: 5.8
+ * Requires PHP: 7.4
+ * Tested up to: 6.9
+ * Text Domain: quick-download-button
  *
  * @package quick-download-button
  */
@@ -15,6 +20,8 @@ defined( 'ABSPATH' ) || exit;
 // Define globals properties
 define( 'QDBN__PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'QDBN__PLUGIN_URI', plugin_dir_url( __FILE__ ) );
+define( 'QDBN__VERSION',    '1.4.0' );
+define( 'QDBN__DB_VERSION', '1.5' );      // bump when schema changes
 
 /**
  * Load translations for the plugin from the /languages/ folder.
@@ -211,25 +218,6 @@ function qdbu_button_front_end_script() {
 }
 add_action( 'wp_enqueue_scripts', 'qdbu_button_front_end_script' );
 
-add_action( 'wp_ajax_nopriv_quick-download-button-frontend-script', 'qdbu_download_ajax_referer' );
-add_action( 'wp_ajax_quick-download-button-frontend-script', 'qdbu_download_ajax_referer' );
-
-
-/**
- * Nonce to be used for download page
- */
-
-function qdbu_download_ajax_referer() {
-	 //nonce-field is created on page
-	check_ajax_referer( 'qdbutton_nonce_action', 'security' );
-
-	$return = array();
-	$return . array_push( $script_params );
-
-	echo $return;
-
-	wp_die();
-}
 
 /**
  * Shortcode
@@ -312,5 +300,36 @@ require_once 'class/create.downloadpage.class.php';
 $create_download_page = new QDBU_CreateDownloadPage();
 
 register_activation_hook( __FILE__, array( $create_download_page, 'activation_logic' ) );
+
+// ── Feature module activation / deactivation ──────────────────────────────
+
+register_activation_hook( __FILE__, 'qdbn_activate_features' );
+function qdbn_activate_features() {
+	require_once QDBN__PLUGIN_DIR . 'includes/class-qdbp-settings.php';
+	require_once QDBN__PLUGIN_DIR . 'includes/class-qdbp-analytics.php';
+	require_once QDBN__PLUGIN_DIR . 'includes/class-qdbp-email-gate.php';
+	require_once QDBN__PLUGIN_DIR . 'includes/class-qdbp-expiring-links.php';
+	QDBP_Analytics::create_table();
+	QDBP_Email_Gate::create_table();
+	QDBP_Expiring_Links::create_table();
+	QDBP_Analytics::backfill_counts();
+	QDBP_Analytics::schedule_cleanup();
+	update_option( 'qdbp_db_version', QDBN__DB_VERSION );
+}
+
+register_deactivation_hook( __FILE__, 'qdbn_deactivate_features' );
+function qdbn_deactivate_features() {
+	require_once QDBN__PLUGIN_DIR . 'includes/class-qdbp-settings.php';
+	require_once QDBN__PLUGIN_DIR . 'includes/class-qdbp-analytics.php';
+	QDBP_Analytics::unschedule_cleanup();
+}
+
+// ── Load feature modules ───────────────────────────────────────────────────
+
+add_action( 'plugins_loaded', 'qdbn_load_features' );
+function qdbn_load_features() {
+	require_once QDBN__PLUGIN_DIR . 'includes/class-qdbp-loader.php';
+	QDBP_Loader::init();
+}
 
 

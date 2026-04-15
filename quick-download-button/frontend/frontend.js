@@ -23,6 +23,7 @@ document.addEventListener( 'DOMContentLoaded', function () {
             const downloadExternalUrl  = qdButton.getAttribute( 'data-external-url' );
             const usePopup             = qdButton.hasAttribute( 'data-qdb-popup' );
             const popupClosable        = qdButton.getAttribute( 'data-qdb-popup-closable' ) !== '0';
+            const qdbBtnId             = qdButton.getAttribute( 'data-qdb-btn-id' ) || '';
             let   validate             = qdButton.getAttribute( 'data-validate' );
             let   validateMsg          = qdButton.getAttribute( 'data-validate-msg' );
 
@@ -112,7 +113,7 @@ document.addEventListener( 'DOMContentLoaded', function () {
             const haveWait = ! isNaN( waitInt ) && waitInt > 0;
 
             if ( ! haveWait ) {
-                extFileUrl( linkType, linkUrl );
+                fireDownload( linkType, linkUrl );
                 return;
             }
 
@@ -237,7 +238,7 @@ document.addEventListener( 'DOMContentLoaded', function () {
                 if ( overlay && overlay.parentNode ) overlay.remove();
                 document.body.style.overflow = '';
                 delete qdButton.dataset.qdbRunning;
-                extFileUrl( linkType, linkUrl );
+                fireDownload( linkType, linkUrl );
             } );
 
             // ── helpers ───────────────────────────────────────────────────────
@@ -257,10 +258,35 @@ document.addEventListener( 'DOMContentLoaded', function () {
 
             function extFileUrl( type, url ) {
                 if ( typeof quick_download_object === 'undefined' || ! quick_download_object.security ) return;
-                const dlUrl = quick_download_object.redirecturl
+                let dlUrl = quick_download_object.redirecturl
                     + '?_wpnonce=' + quick_download_object.security
                     + '&' + type + '=' + url;
+                if ( qdbBtnId ) dlUrl += '&qdb_btn_id=' + encodeURIComponent( qdbBtnId );
                 window.open( dlUrl, targetBlank === 'false' ? '_self' : '_blank' );
+            }
+
+            /**
+             * Dispatch a cancelable 'qdb-before-download' event on the button.
+             * Pro plugins can call event.preventDefault() to intercept the download
+             * (e.g. show an email gate or passcode form) and use detail.proceed() to
+             * resume it once the gate is passed.
+             */
+            function fireDownload( type, url ) {
+                const evt = new CustomEvent( 'qdb-before-download', {
+                    bubbles:    true,
+                    cancelable: true,
+                    detail: {
+                        button:   qdButton,
+                        btnId:    qdbBtnId,
+                        linkType: type,
+                        linkUrl:  url,
+                        proceed:  extFileUrl,
+                    },
+                } );
+                qdButton.dispatchEvent( evt );
+                if ( ! evt.defaultPrevented ) {
+                    extFileUrl( type, url );
+                }
             }
 
         } ); // click

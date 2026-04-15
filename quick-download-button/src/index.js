@@ -23,7 +23,7 @@ import {
     SelectControl
 } from '@wordpress/components';
 
-import { useState, RawHTML } from '@wordpress/element';
+import { useState, useEffect, RawHTML } from '@wordpress/element';
 
 import colors from './colors';
 
@@ -370,6 +370,10 @@ registerBlockType( 'quick-download-button/download-button', {
             type: 'boolean',
             default: true
         },
+        btnId: {
+            type: 'string',
+            default: ''
+        },
 
     },
     supports: {
@@ -435,10 +439,18 @@ registerBlockType( 'quick-download-button/download-button', {
                 popupEnabled,
                 popupContent,
                 popupClosable,
+                btnId,
             },
             setAttributes,
             className
         } = props;
+
+        // Generate a stable random ID once on first insert
+        useEffect( () => {
+            if ( ! btnId ) {
+                setAttributes( { btnId: Math.random().toString( 36 ).substr( 2, 9 ) } );
+            }
+        }, [] );
 
 
         const onChangeTitle = (newTitle) => {
@@ -1383,6 +1395,7 @@ registerBlockType( 'quick-download-button/download-button', {
                         data-has-icon-dark={attributes.hasDownloadIconDark}
                         { ...(attributes.popupEnabled ? { 'data-qdb-popup': '1' } : {}) }
                         { ...(attributes.popupEnabled && !attributes.popupClosable ? { 'data-qdb-popup-closable': '0' } : {}) }
+                        { ...(attributes.btnId ? { 'data-qdb-btn-id': attributes.btnId } : {}) }
                         title={attributes.downloadTitlePlaceholder}>
                             <span className='download-btn-icon'>{ qdbRenderIcon( QDB_DOWNLOAD_ICONS, attributes.iconId, attributes.customIconSvg ) }</span>
                             <RichText.Content tagName="span" value={attributes.downloadTitle} />

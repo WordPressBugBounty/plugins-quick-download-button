@@ -165,6 +165,9 @@ class QDBU_QuickDownloadShortCode {
 		}
 		$l1_style .= '"';
 
+		// Compute btn_id once so it is available throughout generate_button() and to all Pro filters/actions.
+		$this->a['btn_id'] = substr( md5( $this->pid . '_' . $this->attachment_id . '_' . $this->a['url_external'] ), 0, 12 );
+
 		$hide_size = '' === $this->a['file_size'] ? ' hide-size' : '' ;
 		$hide_file = '' === $this->a['extension'] ? ' hide-file' : '' ;
 
@@ -249,6 +252,7 @@ class QDBU_QuickDownloadShortCode {
 					data-has-icon-dark="<?php echo esc_attr( $this->color_icon_dark ); ?>"
 			<?php if ( $this->popup_content ) : ?>data-qdb-popup="1"<?php endif; ?>
 			<?php if ( $this->popup_content && '0' === $this->popup_closable ) : ?>data-qdb-popup-closable="0"<?php endif; ?>
+			data-qdb-btn-id="<?php echo esc_attr( $this->a['btn_id'] ); ?>"
 				<?php
 				if ( empty( $this->a['url_external'] ) && strpos( $this->a['url'], site_url()) !== false)  :
 					?>
@@ -376,6 +380,17 @@ class QDBU_QuickDownloadShortCode {
 	<?php if ( $this->popup_content ) : ?>
 	<div class="qdb-popup-src" hidden><?php echo $this->popup_content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted: processed by do_shortcode, output by editor ?></div>
 	<?php endif; ?>
+	<?php
+	/**
+	 * Action: qdb_gate_html
+	 *
+	 * Output additional HTML inside the button wrapper (after the button, before closing div).
+	 * Used by Pro: inject email gate form, passcode input, etc.
+	 *
+	 * @param array $atts Shortcode attributes.
+	 */
+	do_action( 'qdb_gate_html', $this->a );
+	?>
 	</div>
 		<?php
 		/**

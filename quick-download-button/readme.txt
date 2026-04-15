@@ -5,8 +5,8 @@ Tags: download button, file download, countdown timer, gutenberg block, access c
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Requires at least: 5.6
-Tested up to: 6.7
-Stable tag: 1.3.0
+Tested up to: 6.9
+Stable tag: 1.4.0
 Requires PHP: 7.4
 
 Add stylish download buttons to any post or page — 7 styles, countdown, popup modal, access control. Gutenberg block and shortcode.
@@ -116,10 +116,10 @@ To prevent the visitor from closing the popup before the download starts:
 
 = Shortcode — button group (multiple buttons in a row) =
 
-    [quick_download_button_group alignment="center" gap="16"]
+    `[quick_download_button_group alignment="center" gap="16"]
       [quick_download_button title="Download v1.0" url_external="https://example.com/v1.zip"]
       [quick_download_button title="Download v2.0" url_external="https://example.com/v2.zip"]
-    [/quick_download_button_group]
+    [/quick_download_button_group]`
 
 == More Shortcode Examples ==
 
@@ -193,45 +193,215 @@ Available values: `large`, `mid`, `small`, `basic`, `pill`, `card`, `ghost`
 
 = [quick_download_button] =
 
-| Attribute | Description | Default | Example value |
-| --- | --- | --- | --- |
-| `title` | Button label text | `"Download"` | `"Download Now"` |
-| `url` | URL of a file in your WordPress uploads folder | — | `"https://yoursite.com/wp-content/uploads/file.pdf"` |
-| `url_external` | URL of a file hosted outside WordPress | — | `"https://example.com/file.zip"` |
-| `file_size` | `"1"` auto-detects size; any other value is displayed as-is | — | `"1"` or `"14.5 MB"` |
-| `extension` | Show (`"1"`) or hide (`"0"`) the file type icon | `"1"` | `"0"` |
-| `extension_text` | Also show the extension as text next to the icon | `"0"` | `"1"` |
-| `open_new_window` | Open link in a new tab | `"false"` | `"true"` |
-| `wait` | Seconds before the download starts | `0` | `"15"` |
-| `msg` | Message shown during the countdown | `"Please wait..."` | `"Loading..."` |
-| `button_type` | Button style | `"large"` | `large` / `mid` / `small` / `basic` / `pill` / `card` / `ghost` |
-| `color_bg` | Button background colour | — | `"#ffc107"` |
-| `panel_color` | Panel/card background colour (pill, card, ghost styles) | — | `"#f0f8ff"` |
-| `color_font` | Button text colour | — | `"#ffffff"` |
-| `color_icon_dark` | Use dark icon (`"true"`) or light icon (`"false"`) | `"true"` | `"false"` |
-| `icon_id` | Built-in download icon | `"default"` | `default` / `cloud` / `circle` / `file-dl` / `inbox` / `save` / `bolt` / `folder` / `archive` / `info` / `chip` |
-| `file_size_icon_id` | Built-in file size icon | `"folder"` | same set as `icon_id` |
-| `icon_position` | Icon side of the button label | `"left"` | `"right"` |
-| `border_width` | Border thickness in pixels | — | `"2"` |
-| `border_style` | CSS border style | — | `"solid"` |
-| `border_color` | Border colour | — | `"#333333"` |
-| `border_radius` | Corner rounding in pixels | — | `"9"` |
-| `align` | Button alignment on the page | — | `left` / `center` / `right` |
-| `padding` | Vertical padding in pixels | — | `"12"` |
-| `user_must_be` | Restrict access by role or login | — | `"loggedin"` / `"subscriber"` |
-| `validate_msg` | Error message shown when access is denied | — | `"Members only."` |
-| `popup_closable` | Allow (`"1"`) or prevent (`"0"`) dismissing the popup before countdown ends | `"1"` | `"0"` |
+<table>
+    <thead>
+        <tr>
+            <th>Attribute</th>
+            <th>Description</th>
+            <th>Default</th>
+            <th>Example value</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>title</code></td>
+            <td>Button label text</td>
+            <td><code>"Download"</code></td>
+            <td><code>"Download Now"</code></td>
+        </tr>
+        <tr>
+            <td><code>url</code></td>
+            <td>URL of a file in your WordPress uploads folder</td>
+            <td>—</td>
+            <td><code>"https://yoursite.com/wp-content/uploads/file.pdf"</code></td>
+        </tr>
+        <tr>
+            <td><code>url_external</code></td>
+            <td>URL of a file hosted outside WordPress</td>
+            <td>—</td>
+            <td><code>"https://example.com/file.zip"</code></td>
+        </tr>
+        <tr>
+            <td><code>file_size</code></td>
+            <td><code>"1"</code> auto-detects size; any other value is displayed as-is</td>
+            <td>—</td>
+            <td><code>"1"</code> or <code>"14.5 MB"</code></td>
+        </tr>
+        <tr>
+            <td><code>extension</code></td>
+            <td>Show (<code>"1"</code>) or hide (<code>"0"</code>) the file type icon</td>
+            <td><code>"1"</code></td>
+            <td><code>"0"</code></td>
+        </tr>
+        <tr>
+            <td><code>extension_text</code></td>
+            <td>Also show the extension as text next to the icon</td>
+            <td><code>"0"</code></td>
+            <td><code>"1"</code></td>
+        </tr>
+        <tr>
+            <td><code>open_new_window</code></td>
+            <td>Open link in a new tab</td>
+            <td><code>"false"</code></td>
+            <td><code>"true"</code></td>
+        </tr>
+        <tr>
+            <td><code>wait</code></td>
+            <td>Seconds before the download starts</td>
+            <td><code>0</code></td>
+            <td><code>"15"</code></td>
+        </tr>
+        <tr>
+            <td><code>msg</code></td>
+            <td>Message shown during the countdown</td>
+            <td><code>"Please wait..."</code></td>
+            <td><code>"Loading..."</code></td>
+        </tr>
+        <tr>
+            <td><code>button_type</code></td>
+            <td>Button style</td>
+            <td><code>"large"</code></td>
+            <td><code>large</code> / <code>mid</code> / <code>small</code> / <code>basic</code> / <code>pill</code> / <code>card</code> / <code>ghost</code></td>
+        </tr>
+        <tr>
+            <td><code>color_bg</code></td>
+            <td>Button background colour</td>
+            <td>—</td>
+            <td><code>"#ffc107"</code></td>
+        </tr>
+        <tr>
+            <td><code>panel_color</code></td>
+            <td>Panel/card background colour (pill, card, ghost styles)</td>
+            <td>—</td>
+            <td><code>"#f0f8ff"</code></td>
+        </tr>
+        <tr>
+            <td><code>color_font</code></td>
+            <td>Button text colour</td>
+            <td>—</td>
+            <td><code>"#ffffff"</code></td>
+        </tr>
+        <tr>
+            <td><code>color_icon_dark</code></td>
+            <td>Use dark icon (<code>"true"</code>) or light icon (<code>"false"</code>)</td>
+            <td><code>"true"</code></td>
+            <td><code>"false"</code></td>
+        </tr>
+        <tr>
+            <td><code>icon_id</code></td>
+            <td>Built-in download icon</td>
+            <td><code>"default"</code></td>
+            <td><code>default</code> / <code>cloud</code> / <code>circle</code> / <code>file-dl</code> / <code>inbox</code> / <code>save</code> / <code>bolt</code> / <code>folder</code> / <code>archive</code> / <code>info</code> / <code>chip</code></td>
+        </tr>
+        <tr>
+            <td><code>file_size_icon_id</code></td>
+            <td>Built-in file size icon</td>
+            <td><code>"folder"</code></td>
+            <td>same set as <code>icon_id</code></td>
+        </tr>
+        <tr>
+            <td><code>icon_position</code></td>
+            <td>Icon side of the button label</td>
+            <td><code>"left"</code></td>
+            <td><code>"right"</code></td>
+        </tr>
+        <tr>
+            <td><code>border_width</code></td>
+            <td>Border thickness in pixels</td>
+            <td>—</td>
+            <td><code>"2"</code></td>
+        </tr>
+        <tr>
+            <td><code>border_style</code></td>
+            <td>CSS border style</td>
+            <td>—</td>
+            <td><code>"solid"</code></td>
+        </tr>
+        <tr>
+            <td><code>border_color</code></td>
+            <td>Border colour</td>
+            <td>—</td>
+            <td><code>"#333333"</code></td>
+        </tr>
+        <tr>
+            <td><code>border_radius</code></td>
+            <td>Corner rounding in pixels</td>
+            <td>—</td>
+            <td><code>"9"</code></td>
+        </tr>
+        <tr>
+            <td><code>align</code></td>
+            <td>Button alignment on the page</td>
+            <td>—</td>
+            <td><code>left</code> / <code>center</code> / <code>right</code></td>
+        </tr>
+        <tr>
+            <td><code>padding</code></td>
+            <td>Vertical padding in pixels</td>
+            <td>—</td>
+            <td><code>"12"</code></td>
+        </tr>
+        <tr>
+            <td><code>user_must_be</code></td>
+            <td>Restrict access by role or login</td>
+            <td>—</td>
+            <td><code>"loggedin"</code> / <code>"subscriber"</code></td>
+        </tr>
+        <tr>
+            <td><code>validate_msg</code></td>
+            <td>Error message shown when access is denied</td>
+            <td>—</td>
+            <td><code>"Members only."</code></td>
+        </tr>
+         <tr>
+            <td><code>popup_closable</code></td>
+            <td>Allow (<code>"1"</code>) or prevent (<code>"0"</code>) dismissing the popup before countdown ends</td>
+            <td>—</td>
+            <td><code>"1"</code></td>
+        </tr>
+    </tbody>
+</table>
 
 The `popup_content` is passed as enclosed shortcode content (between the opening and closing tags), not as an attribute. This allows unrestricted HTML, ad code, and nested shortcodes.
 
 = [quick_download_button_group] =
 
-| Attribute | Description | Default | Example value |
-| --- | --- | --- | --- |
-| `layout` | `"horizontal"` (side by side) or `"stack"` (column) | `"horizontal"` | `"stack"` |
-| `stack_on_mobile` | Automatically stack buttons vertically on small screens | `"true"` | `"false"` |
-| `alignment` | Justify the buttons within the row | `"left"` | `left` / `center` / `right` |
-| `gap` | Gap between buttons in pixels | `"12"` | `"20"` |
+<table>
+    <thead>
+        <tr>
+            <th>Attribute</th>
+            <th>Description</th>
+            <th>Default</th>
+            <th>Example value</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>layout</code></td>
+            <td><code>"horizontal"</code> (side by side) or <code>"stack"</code> (column)</td>
+            <td><code>"horizontal"</code></td>
+            <td><code>"stack"</code></td>
+        </tr>
+        <tr>
+            <td><code>stack_on_mobile</code></td>
+            <td>Automatically stack buttons vertically on small screens</td>
+            <td><code>"true"</code></td>
+            <td><code>"false"</code></td>
+        </tr>
+        <tr>
+            <td><code>alignment</code></td>
+            <td>Justify the buttons within the row</td>
+            <td><code>"left"</code></td>
+            <td><code>left</code> / <code>center</code> / <code>right</code></td>
+        </tr>
+        <tr>
+            <td><code>gap</code></td>
+            <td>Gap between buttons in pixels</td>
+            <td><code>"12"</code></td>
+            <td><code>"20"</code></td>
+        </tr>
+    </tbody>
+</table>
 
 == Frequently Asked Questions ==
 
@@ -300,6 +470,17 @@ To report issues or contribute, visit the [GitHub repository](https://github.com
 
 == Changelog ==
 
+= 1.4.0 - April 2026 =
+* New: **Admin dashboard** — dedicated "Quick Download" menu in wp-admin with an Overview panel, Download Log, Leads list, and Settings page.
+* New: **Download analytics** — every button click is recorded in a custom database table. View counts per button from the Download Log screen and export to CSV.
+* New: **Download count badge** — optionally display a cumulative download count inline on any button. Controllable globally via Settings or per-button with the `show_count` shortcode attribute / block toggle.
+* New: **Email gate infrastructure** — foundation for collecting visitor emails before a download starts (Pro activation required to enable the gate on individual buttons).
+* New: **`data-qdb-btn-id` attribute** — each button now carries a unique identifier used by analytics and the new extensibility hooks.
+* New: **`qdb-before-download` JavaScript event** — fired on the button element before the download URL is followed. Cancelable; Pro add-ons use `event.preventDefault()` and `detail.proceed()` to intercept and resume the download.
+* New: **`qdb_gate_html` action hook** — lets add-on plugins inject gate HTML (email form, passcode input, etc.) inside the button wrapper without editing core files.
+* Improved: Plugin description updated to reflect current feature set.
+* Improved: Added `QDBN__VERSION` and `QDBN__DB_VERSION` constants for use by add-on plugins and update routines.
+
 = 1.3.0 - March 2025 =
 * New: Three additional button styles — **Pill**, **Card**, and **Ghost** — joining the original Large, Mid, Small, and Basic.
 * New: **Button Row block** (Gutenberg) and `[quick_download_button_group]` shortcode — arrange multiple buttons horizontally or stacked, with gap and alignment controls and an optional stack-on-mobile mode.
@@ -345,6 +526,9 @@ To report issues or contribute, visit the [GitHub repository](https://github.com
 * New: `wait` and `color_bg` shortcode attributes.
 
 == Upgrade Notice ==
+
+= 1.4.0 =
+Adds an admin dashboard, download analytics, download count badge, and extensibility hooks for Pro add-ons. No breaking changes — existing buttons and shortcodes continue to work without modification.
 
 = 1.3.0 =
 Major feature release. Three new button styles, popup modal with countdown, button row layout, manual file size, icon picker, and several CSS fixes. No breaking changes for existing buttons.
