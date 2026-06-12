@@ -1,5 +1,5 @@
 === Quick Download Button ===
-Contributors: kusimo
+Contributors: sidocode, kusimo
 Donate link: https://www.buymeacoffee.com/kusimo
 Tags: download button, file download, countdown timer, gutenberg block, access control
 License: GPLv2 or later

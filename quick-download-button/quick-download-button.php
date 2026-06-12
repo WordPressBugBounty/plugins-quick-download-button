@@ -5,8 +5,11 @@
  * Plugin URI: https://github.com/kusimo/quick-download-button
  * Description: Create download buttons with countdown timers and file links. Upgrade to unlock email capture, analytics, and secure downloads.
  * Version: 1.4.0
- * Author: Abidemi Kusimo
- * Contributors: sidocode
+ * Author: sidocode
+ * Author URI: https://www.sidocode.com
+ * License: GPL-2.0+
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Contributors: sidocode, kusimo
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -31,6 +34,11 @@ define( 'QDBN__DB_VERSION', '1.5' );      // bump when schema changes
 
 add_action( 'init', 'qdbu_quick_download_button_load_textdomain' );
 
+/**
+ * function qdbu_quick_download_button_load_textdomain
+ *
+ * @return void
+ */
 function qdbu_quick_download_button_load_textdomain() {
 	 load_plugin_textdomain( 'quick-download-button', false, basename( __DIR__ ) . '/languages' );
 }
@@ -59,6 +67,11 @@ function quick_download_button_page_settings_link( $links ) {
  */
 add_action( 'init', 'qdbu_quick_download_button_register_blocks' );
 
+/**
+ * function qdbu_quick_download_button_register_blocks
+ *
+ * @return void
+ */
 function qdbu_quick_download_button_register_blocks() {
 	//If Block Editor is not active, bail.
 	if ( ! function_exists( 'register_block_type' ) ) {
@@ -126,6 +139,11 @@ function qdbu_quick_download_button_register_blocks() {
 	}
 }
 
+/**
+ * function qdbu_enqueue_block_editor_assets
+ *
+ * @return void
+ */
 function qdbu_enqueue_block_editor_assets() {
     // Enqueue editor-specific styles
     wp_enqueue_style(
@@ -146,7 +164,13 @@ function qdbu_enqueue_block_editor_assets() {
 
 add_action('enqueue_block_editor_assets', 'qdbu_enqueue_block_editor_assets');
 
-
+/**
+ * function has_quick_download_button
+ *
+ * @param mixed $post_id
+ *
+ * @return bool
+ */
 function has_quick_download_button($post_id) {
     $post = get_post($post_id);
     $content = $post ? $post->post_content : '';
@@ -165,7 +189,11 @@ function has_quick_download_button($post_id) {
 }
 
 /**
+ * function qdbu_enqueue_download_button_styles
+ *
  * Front end CSS
+ *
+ * @return void
  */
 function qdbu_enqueue_download_button_styles() {
     global $post;
@@ -182,7 +210,11 @@ function qdbu_enqueue_download_button_styles() {
 add_action('wp_enqueue_scripts', 'qdbu_enqueue_download_button_styles');
 
 /**
+ * function qdbu_button_front_end_script
+ *
  * Front end Script
+ *
+ * @return void
  */
 function qdbu_button_front_end_script() {
 		global $post;
@@ -234,6 +266,12 @@ $downloadShortcode = new QDBU_QuickDownloadShortCode();
  * Download page name can be renamed before using the plugin. Rename just once and before using
  * */
 if ( ! function_exists( 'qdbu_default_url' ) ) {
+
+	/**
+	 * function qdbu_default_url
+	 *
+	 * @return mixed
+	 */
 	function qdbu_default_url() {
 
 		$quick_download_button_default_page = site_url() . '/quick-download-button/';
@@ -250,10 +288,13 @@ if ( ! function_exists( 'qdbu_default_url' ) ) {
 add_filter( 'template_include', 'qdbu_download_button_plugin_templates' );
 
 /**
+ * function qdbu_download_button_plugin_templates
+ *
  * Get Custom Template for the download page
  *
- * @param  mixed $template
- * @return void
+ * @param mixed $template
+ *
+ * @return mixed
  */
 function qdbu_download_button_plugin_templates( $template ) {
 
@@ -269,10 +310,13 @@ function qdbu_download_button_plugin_templates( $template ) {
 
 
 // register custom meta tag field
+
 /**
+ * function qdbu_register_post_meta
+ *
  * Feature development - to store the download url in the cutom field. Do not uncomment qdbu_register_post_meta.
  *
- * @return void
+ * @return mixed
  */
 function qdbu_register_post_meta() {
 	register_post_meta(
@@ -304,6 +348,12 @@ register_activation_hook( __FILE__, array( $create_download_page, 'activation_lo
 // ── Feature module activation / deactivation ──────────────────────────────
 
 register_activation_hook( __FILE__, 'qdbn_activate_features' );
+
+/**
+ * function qdbn_activate_features
+ *
+ * @return void
+ */
 function qdbn_activate_features() {
 	require_once QDBN__PLUGIN_DIR . 'includes/class-qdbp-settings.php';
 	require_once QDBN__PLUGIN_DIR . 'includes/class-qdbp-analytics.php';
@@ -318,6 +368,12 @@ function qdbn_activate_features() {
 }
 
 register_deactivation_hook( __FILE__, 'qdbn_deactivate_features' );
+
+/**
+ * function qdbn_deactivate_features
+ *
+ * @return void
+ */
 function qdbn_deactivate_features() {
 	require_once QDBN__PLUGIN_DIR . 'includes/class-qdbp-settings.php';
 	require_once QDBN__PLUGIN_DIR . 'includes/class-qdbp-analytics.php';
@@ -327,6 +383,12 @@ function qdbn_deactivate_features() {
 // ── Load feature modules ───────────────────────────────────────────────────
 
 add_action( 'plugins_loaded', 'qdbn_load_features' );
+
+/**
+ * function qdbn_load_features
+ *
+ * @return void
+ */
 function qdbn_load_features() {
 	require_once QDBN__PLUGIN_DIR . 'includes/class-qdbp-loader.php';
 	QDBP_Loader::init();
